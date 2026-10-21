@@ -1,0 +1,13 @@
+# EditorConfig for MicMax
+root = true
+
+[*]
+charset = utf-8
+indent_size = 4
+indent_style = space
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+**[*.{cs,vb,css,js,json,md,yaml,yml}]
+end_of_line = lf
+max_line_length = 120

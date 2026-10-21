@@ -1,0 +1,71 @@
+name: Release
+
+# Builds the app, runs the tests, compiles the Inno Setup installer and
+# publishes a GitHub Release with both assets — triggered by pushing a v* tag.
+#
+#   git tag v1.1.0 && git push origin v1.1.0
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Run tests
+        run: dotnet test MicMax.sln -c Release --no-restore
+
+      - name: Publish app (single-file, self-contained win-x64)
+        run: dotnet publish src\MicMax\MicMax.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+
+      - name: Build installer (Inno Setup)
+        shell: pwsh
+        run: |
+          $iscc = @(
+            "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
+            "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe"
+          ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+
+          if (-not $iscc) {
+            winget install --id JRSoftware.InnoSetup -e --accept-source-agreements --accept-package-agreements --silent
+            $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          }
+
+          # Set the installer version from the tag (e.g. v1.2.0 -> 1.2.0).
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          & $iscc "/DMyAppVersion=$version" installer\MicMax.iss
+
+      - name: Stage release assets
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          Copy-Item "src\MicMax\bin\Release\net8.0-windows\win-x64\publish\MicMax.exe" `
+                    "dist\MicMax-$version-portable.exe"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.exe
+          generate_release_notes: true
+          body: |
+            **MicMax ${{ github.ref_name }}**
+
+            | Asset | Description |
+            |-------|-------------|
+            | `MicMax-Setup-*.exe` | Installer (per-user, no admin rights needed) |
+            | `MicMax-*-portable.exe` | Portable single-file app — just copy and run |
+
+            Requires Windows 10 (1809+) or Windows 11, x64.

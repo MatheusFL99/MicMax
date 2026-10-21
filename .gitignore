@@ -1,0 +1,50 @@
+# .NET specific
+[Bb]in/
+[Oo]bj/
+*.exe
+*.dll
+*.pdb
+*.json.user
+*.vspscc
+*.svc.cs
+[Rr]elease/
+[Dd]ebug/
+*.deployments/
+packages/
+.vs/
+
+# Visual Studio
+*.suo
+*.user
+*.ide
+*.reproj
+*.userosschematic
+*.aps
+*.ncb
+*.sbr
+*.user
+*.ArchivedProject.*
+
+# Operating system
+.DS_Store
+Thumbs.db
+
+# NuGet
+*.nuget/
+
+# Coverage
+coverage/
+*.coverlet
+*.coverage
+
+# Installer output (release assets are attached to GitHub Releases)
+/dist/
+
+# Local agent/tooling config
+.opencode/
+
+# Publish
+*.publish.xml
+
+# Environment variables
+.env*
